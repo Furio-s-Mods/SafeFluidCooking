@@ -2,19 +2,28 @@ using System;
 using HarmonyLib;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+using ProtoBuf;
 
 namespace SafeFluidCooking;
+
+[ProtoContract]
+public class PunishMessage { }
+
 public class MainSystem : ModSystem
 {
     private Harmony harmony;
     const string modName = "safefluidcooking";
     private const string HarmonyId = $"com.furio.{modName}";
-    private bool disposed;
+    private int disposed = 0;
 
     private ICoreClientAPI capi;
     private ItemSlot activeFlashingSlot;
     private float flashRemainingTime;
     private long tickListenerId;
+
+    public IClientNetworkChannel ClientChannel { get; private set; }
+    public IServerNetworkChannel ServerChannel { get; private set; }
 
     public override bool ShouldLoad(EnumAppSide forSide) => true;
 
@@ -25,7 +34,7 @@ public class MainSystem : ModSystem
         {
             harmony = new Harmony(HarmonyId);
             harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
-            api.Logger.Notification($"[{modName}] Harmony patches applied successfully!");
+            // api.Logger.Notification($"[{modName}] Harmony patches applied successfully!");
         }
         catch (Exception ex)
         {
@@ -33,11 +42,49 @@ public class MainSystem : ModSystem
         }
     }
 
+    public override void StartServerSide(ICoreServerAPI api) {
+        base.StartServerSide(api);
+        
+        ServerChannel = api.Network.RegisterChannel(modName)
+            .RegisterMessageType<PunishMessage>()
+            .SetMessageHandler<PunishMessage>(OnPunishMessageReceived);
+    }
+
     public override void StartClientSide(ICoreClientAPI api) {
         base.StartClientSide(api);
         capi = api;
         
+        ClientChannel = api.Network.RegisterChannel(modName)
+            .RegisterMessageType<PunishMessage>();
+        
         api.Event.LeaveWorld += OnLeaveWorld;
+    }
+
+    private void OnPunishMessageReceived(IServerPlayer player, PunishMessage msg) {
+        ApplyPunishment(player);
+    }
+
+    /// <summary>
+    /// Centralized helper method to process server-assigned damage and audio effects uniformly.
+    /// </summary>
+    public static void ApplyPunishment(IPlayer player) {
+        if (player?.Entity == null) return;
+        if (player.WorldData.CurrentGameMode != EnumGameMode.Survival) return;
+
+        DamageSource dmgSource = new() {
+            Source = EnumDamageSource.Internal,
+            Type = EnumDamageType.Fire 
+        };
+        player.Entity.ReceiveDamage(dmgSource, 1.0f);
+
+        AssetLocation soundLocation = new("game:sounds/effect/extinguish1");
+        player.Entity.World.PlaySoundAt(
+            location: soundLocation, 
+            atEntity: player.Entity, 
+            randomizePitch: true,
+            range: 16f,
+            volume: 2.0f
+        );
     }
 
     private void OnLeaveWorld() {
@@ -94,8 +141,7 @@ public class MainSystem : ModSystem
     }
 
     public override void Dispose() {
-        if (disposed) return;
-        disposed = true;
+        if (System.Threading.Interlocked.Exchange(ref disposed, 1) == 1) return;
 
         harmony?.UnpatchAll(HarmonyId);
         harmony = null;
@@ -103,6 +149,9 @@ public class MainSystem : ModSystem
         capi?.Event.LeaveWorld -= OnLeaveWorld;
         capi = null;
         StopTickListener();
+
+        ClientChannel = null;
+        ServerChannel = null;
         
         base.Dispose();
     }

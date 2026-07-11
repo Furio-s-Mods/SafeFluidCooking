@@ -3,8 +3,8 @@
   "modid": "safefluidcooking",
   "name": "Safe Fluid Cooking",
   "authors": [ "Furio" ],
-  "version": "1.0.0",
-  "description": "No more lost liquids.",
+  "version": "1.0.1",
+  "description": "No more lost liquids. You'll get burnt if you try.",
   "side": "Universal",
   "requiredOnClient": false,
   "dependencies": {

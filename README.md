@@ -6,7 +6,7 @@ I sure did. And I didn't like it.
 
 ## What it does
 Instead of letting your precious resources vanish into thin air, this mod safely locks the cooking container slot inside the firepit GUI if it contains any liquid.
-Attempting to remove a fluid-filled pot triggers a sleek red background flash on the item slot and displays a helpful chat notification.
+Attempting to remove a fluid-filled pot triggers a sleek red background flash on the item slot, inflict a small amount of burning damage and displays a helpful chat notification and hiss sound.
 If your pot contains solid food (like carrots, meat) or ores for smelting, you can still remove the container freely.
 
 ## Compatibility
@@ -18,7 +18,7 @@ Built with performance and compatibility in mind, this mod does not overwrite co
 
 ## Installation
 
-* Side: Universal (Required on Server, Optional but highly recommended on Client for the visual red flash effect).
+* Side: Universal (Required on Server, Optional but highly recommended on Client for the visual and sound effects).
 
 ## Feedback
 Make noise on the discord channel under mods > Furio's Mods if you think this should be native behaviour.
