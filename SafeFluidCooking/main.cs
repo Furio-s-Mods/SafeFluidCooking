@@ -4,18 +4,23 @@ using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 using ProtoBuf;
+using Vintagestory.GameContent;
 
 namespace SafeFluidCooking;
 
 [ProtoContract]
-public class PunishMessage { }
+public class PunishMessage 
+{
+    [ProtoMember(1)]
+    public string InventoryId { get; set; }
+}
 
 public class MainSystem : ModSystem
 {
     private Harmony harmony;
     const string modName = "safefluidcooking";
     private const string HarmonyId = $"com.furio.{modName}";
-    private int disposed = 0;
+    private int disposed;
 
     private ICoreClientAPI capi;
     private ItemSlot activeFlashingSlot;
@@ -61,12 +66,29 @@ public class MainSystem : ModSystem
     }
 
     private void OnPunishMessageReceived(IServerPlayer player, PunishMessage msg) {
-        ApplyPunishment(player);
+        if (player?.InventoryManager == null || string.IsNullOrEmpty(msg.InventoryId)) return;
+
+        var inv = player.InventoryManager.GetInventory(msg.InventoryId) as InventorySmelting;
+        if (inv?.CookingSlots == null) return;
+
+        bool verifiedHot = false;
+        foreach (var slot in inv.CookingSlots) {
+            var stack = slot?.Itemstack;
+            if (stack == null) continue;
+
+            if (BlockLiquidContainerBase.GetContainableProps(stack) != null) {
+                if (stack.Collectible.GetTemperature(player.Entity.World, stack) >= 60f) {
+                    verifiedHot = true;
+                    break;
+                }
+            }
+        }
+
+        if (verifiedHot) {
+            ApplyPunishment(player);
+        }
     }
 
-    /// <summary>
-    /// Centralized helper method to process server-assigned damage and audio effects uniformly.
-    /// </summary>
     public static void ApplyPunishment(IPlayer player) {
         if (player?.Entity == null) return;
         if (player.WorldData.CurrentGameMode != EnumGameMode.Survival) return;
@@ -83,7 +105,7 @@ public class MainSystem : ModSystem
             atEntity: player.Entity, 
             randomizePitch: true,
             range: 16f,
-            volume: 2.0f
+            volume: 1.0f
         );
     }
 
@@ -148,10 +170,11 @@ public class MainSystem : ModSystem
 
         capi?.Event.LeaveWorld -= OnLeaveWorld;
         capi = null;
-        StopTickListener();
-
+        
         ClientChannel = null;
         ServerChannel = null;
+        
+        StopTickListener();
         
         base.Dispose();
     }
