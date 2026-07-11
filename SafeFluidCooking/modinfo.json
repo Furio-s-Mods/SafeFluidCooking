@@ -1,0 +1,13 @@
+{
+  "type": "code",
+  "modid": "safefluidcooking",
+  "name": "Safe Fluid Cooking",
+  "authors": [ "Furio" ],
+  "version": "1.0.0",
+  "description": "No more lost liquids.",
+  "side": "Universal",
+  "requiredOnClient": false,
+  "dependencies": {
+    "game": "1.22.3"
+  }
+}
