@@ -30,36 +30,33 @@ public class PreventContainerRemovalPatch {
 
         if (!hasContents) return true;
 
-        var potStack = smeltingInv.Slots[slotId]?.Itemstack;
-        if (potStack == null) return true;
-
-        float currentTemp = potStack.Collectible.GetTemperature(__instance.Api.World, potStack);
-        bool isHot = currentTemp >= 60f;
+        bool isHot = PunishmentManager.IsPotHot(__instance.Api.World, smeltingInv);
 
         HandleFailureEffects(__instance.Api, __instance[slotId], op, __instance.InventoryID, isHot);
         return false; 
     }
     
     private static void HandleFailureEffects(ICoreAPI api, ItemSlot slot, ItemStackMoveOperation op, string inventoryId, bool isHot) {
-        // --- Client Side Feedback ---
         if (api is ICoreClientAPI capi) {
-            capi.ShowChatMessage("Spilling this would make a mess. Empty it first.");
+            // capi.ShowChatMessage("Spilling this would make a mess. Empty it first.");
             
             var mainSystem = capi.ModLoader.GetModSystem<MainSystem>();
             mainSystem?.FlashManager?.TriggerRedFlash(slot, 0.4f);
             
-            if (isHot) {
-                mainSystem?.ClientChannel?.SendPacket(new PunishMessage { InventoryId = inventoryId });
-            }
-            else {
-                PlayerSoundHelper.PlayVoiceFeedback(capi.World.Player, EnumTalkType.IdleShort);
+            if (capi.World.Player.WorldData.CurrentGameMode == EnumGameMode.Survival)
+            {
+                if (isHot) {
+                    mainSystem?.ClientChannel?.SendPacket(new PunishMessage { InventoryId = inventoryId });
+                }
+                else {
+                    PlayerSoundHelper.PlayVoiceFeedback(capi.World.Player, EnumTalkType.IdleShort);
+                }
             }
         }
         
-        // --- Server Side Fallback Check ---
         if (api is ICoreServerAPI) {
             if (isHot) {
-                PunishmentManager.ApplyPunishment(op.ActingPlayer);
+                PunishmentManager.ApplyDamage(op.ActingPlayer);
             }
         }
     }

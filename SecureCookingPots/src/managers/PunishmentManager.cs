@@ -14,41 +14,45 @@ public class PunishMessage
 
 public class PunishmentManager(ICoreServerAPI sapi)
 {
-    private readonly ICoreServerAPI sapi = sapi;
+    private ICoreServerAPI sapi = sapi;
+
+    private static readonly DamageSource FireDamage = new() {
+        Source = EnumDamageSource.Internal,
+        Type = EnumDamageType.Fire 
+    };
+
 
     /// <summary>
-    /// Processes incoming exploit guard packets from clients.
+    /// Unified check to see if a cooking pot is dangerously hot.
     /// </summary>
+    public static bool IsPotHot(IWorldAccessor world, InventorySmelting inv)
+    {
+        var potStack = inv?.Slots[1]?.Itemstack;
+        if (potStack == null) return false;
+
+        float currentTemp = potStack.Collectible.GetTemperature(world, potStack);
+        return currentTemp >= 60f;
+    }
+
     public void OnPunishMessageReceived(IServerPlayer player, PunishMessage msg) 
     {
-        if (player?.InventoryManager == null || string.IsNullOrEmpty(msg.InventoryId)) return;
+        if (player?.InventoryManager == null || string.IsNullOrEmpty(msg.InventoryId) || sapi == null) return;
 
-        if (player.InventoryManager.GetInventory(msg.InventoryId) is not InventorySmelting inv) return;
-
-        var potStack = inv.Slots[1]?.Itemstack;
-        if (potStack == null) return;
-
-        float currentTemp = potStack.Collectible.GetTemperature(sapi.World, potStack);
-        
-        if (currentTemp >= 60f) 
+        if (player.InventoryManager.GetInventory(msg.InventoryId) is InventorySmelting inv)
         {
-            ApplyPunishment(player);
+            if (IsPotHot(sapi.World, inv)) 
+            {
+                ApplyDamage(player);
+            }
         }
     }
 
-    /// <summary>
-    /// Inflicts burning damage and triggers an extinguishing sound effect.
-    /// </summary>
-    public static void ApplyPunishment(IPlayer player) 
+    public static void ApplyDamage(IPlayer player) 
     {
         if (player?.Entity == null) return;
         if (player.WorldData.CurrentGameMode != EnumGameMode.Survival) return;
 
-        DamageSource dmgSource = new() {
-            Source = EnumDamageSource.Internal,
-            Type = EnumDamageType.Fire 
-        };
-        player.Entity.ReceiveDamage(dmgSource, 1.0f);
+        player.Entity.ReceiveDamage(FireDamage, 1.0f);
 
         AssetLocation soundLocation = new("game:sounds/effect/extinguish1");
         player.Entity.World.PlaySoundAt(
@@ -58,5 +62,13 @@ public class PunishmentManager(ICoreServerAPI sapi)
             range: 16f,
             volume: 1.0f
         );
+    }
+
+    /// <summary>
+    /// Unloads server API references to prevent memory leaks during mod suspension.
+    /// </summary>
+    public void Dispose()
+    {
+        sapi = null;
     }
 }

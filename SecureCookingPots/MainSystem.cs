@@ -64,6 +64,7 @@ public class MainSystem : ModSystem
 
         FlashManager?.Dispose();
         FlashManager = null;
+        punishmentManager?.Dispose();
         punishmentManager = null;
         
         ClientChannel = null;

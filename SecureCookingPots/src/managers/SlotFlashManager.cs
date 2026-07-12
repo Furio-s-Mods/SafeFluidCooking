@@ -1,7 +1,7 @@
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 
-namespace SecureCookingPots;
+namespace SecureCookingPots.src.managers;
 
 public class SlotFlashManager
 {
@@ -40,7 +40,6 @@ public class SlotFlashManager
             return;
         }
 
-        // If the player closed the UI while it was flashing, clean up gracefully
         if (activeFlashingSlot.Inventory == null || activeFlashingSlot.Inventory.openedByPlayerGUIds.Count == 0)
         {
             ResetActiveSlot();
