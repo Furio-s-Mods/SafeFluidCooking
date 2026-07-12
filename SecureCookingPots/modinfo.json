@@ -1,9 +1,9 @@
 {
   "type": "code",
-  "modid": "safefluidcooking",
-  "name": "Safe Fluid Cooking",
+  "modid": "securecookingpots",
+  "name": "Secure Cooking Pots",
   "authors": [ "Furio" ],
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "No more lost liquids. You'll get burnt if you try.",
   "side": "Universal",
   "requiredOnClient": false,

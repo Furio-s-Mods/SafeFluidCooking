@@ -1,10 +1,13 @@
 using HarmonyLib;
+using SecureCookingPots.src.helpers;
+using SecureCookingPots.src.managers;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
+using Vintagestory.API.Util;
 using Vintagestory.GameContent;
 
-namespace SafeFluidCooking;
+namespace SecureCookingPots.src.patches;
 
 [HarmonyPatch(typeof(InventoryBase), nameof(InventoryBase.ActivateSlot))]
 public class PreventContainerRemovalPatch {
@@ -17,20 +20,24 @@ public class PreventContainerRemovalPatch {
         var cookingSlots = smeltingInv.CookingSlots;
         if (cookingSlots == null || cookingSlots.Length == 0) return true;
 
+        bool hasContents = false;
         foreach (var innerSlot in cookingSlots) {
-            var innerStack = innerSlot?.Itemstack;
-            if (innerStack == null) continue;
-
-            var props = BlockLiquidContainerBase.GetContainableProps(innerStack);
-            if (props == null) continue;
-
-            float currentTemp = innerStack.Collectible.GetTemperature(__instance.Api.World, innerStack);
-            bool isHot = currentTemp >= 60f;
-
-            HandleFailureEffects(__instance.Api, __instance[slotId], op, __instance.InventoryID, isHot);
-            return false; 
+            if (innerSlot?.Itemstack != null) {
+                hasContents = true;
+                break;
+            }
         }
-        return true;
+
+        if (!hasContents) return true;
+
+        var potStack = smeltingInv.Slots[slotId]?.Itemstack;
+        if (potStack == null) return true;
+
+        float currentTemp = potStack.Collectible.GetTemperature(__instance.Api.World, potStack);
+        bool isHot = currentTemp >= 60f;
+
+        HandleFailureEffects(__instance.Api, __instance[slotId], op, __instance.InventoryID, isHot);
+        return false; 
     }
     
     private static void HandleFailureEffects(ICoreAPI api, ItemSlot slot, ItemStackMoveOperation op, string inventoryId, bool isHot) {
@@ -39,26 +46,20 @@ public class PreventContainerRemovalPatch {
             capi.ShowChatMessage("Spilling this would make a mess. Empty it first.");
             
             var mainSystem = capi.ModLoader.GetModSystem<MainSystem>();
-            mainSystem?.TriggerRedFlash(slot, 0.4f);
+            mainSystem?.FlashManager?.TriggerRedFlash(slot, 0.4f);
             
             if (isHot) {
                 mainSystem?.ClientChannel?.SendPacket(new PunishMessage { InventoryId = inventoryId });
             }
             else {
-                capi.World.PlaySoundAt(
-                    location: new AssetLocation("game:sounds/held/bookclose3"),
-                    atEntity: capi.World.Player.Entity,
-                    randomizePitch: true,
-                    range: 8f,
-                    volume: 1.0f
-                );
+                PlayerSoundHelper.PlayVoiceFeedback(capi.World.Player, EnumTalkType.IdleShort);
             }
         }
         
-        // --- Server Side Fallback Check (Exploit Guard) ---
+        // --- Server Side Fallback Check ---
         if (api is ICoreServerAPI) {
             if (isHot) {
-                MainSystem.ApplyPunishment(op.ActingPlayer);
+                PunishmentManager.ApplyPunishment(op.ActingPlayer);
             }
         }
     }
