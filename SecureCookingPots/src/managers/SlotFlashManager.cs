@@ -6,7 +6,7 @@ namespace SecureCookingPots.src.managers;
 public class SlotFlashManager
 {
     private readonly ICoreClientAPI capi;
-    private ItemSlot activeFlashingSlot;
+    public ItemSlot? activeFlashingSlot = null;
     private float flashRemainingTime;
     private long tickListenerId;
 
@@ -64,11 +64,8 @@ public class SlotFlashManager
 
     private void ResetActiveSlot()
     {
-        if (activeFlashingSlot != null)
-        {
-            activeFlashingSlot.HexBackgroundColor = null;
-            activeFlashingSlot = null;
-        }
+        activeFlashingSlot?.HexBackgroundColor = null;
+        activeFlashingSlot = null;
     }
 
     private void StopTickListener()

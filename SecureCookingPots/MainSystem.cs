@@ -9,16 +9,16 @@ namespace SecureCookingPots;
 
 public class MainSystem : ModSystem
 {
-    private Harmony harmony;
+    private Harmony? harmony;
     private const string ModName = "securecookingpots";
     private const string HarmonyId = $"com.furio.{ModName}";
     private int disposed;
 
-    public IClientNetworkChannel ClientChannel { get; private set; }
-    public IServerNetworkChannel ServerChannel { get; private set; }
+    public IClientNetworkChannel? ClientChannel { get; private set; }
+    public IServerNetworkChannel? ServerChannel { get; private set; }
 
-    public SlotFlashManager FlashManager { get; private set; }
-    private PunishmentManager punishmentManager;
+    public SlotFlashManager? FlashManager { get; private set; }
+    private PunishmentManager? punishmentManager;
 
     public override bool ShouldLoad(EnumAppSide forSide) => true;
 

@@ -9,12 +9,12 @@ namespace SecureCookingPots.src.managers;
 public class PunishMessage 
 {
     [ProtoMember(1)]
-    public string InventoryId { get; set; }
+    public required string InventoryId { get; set; }
 }
 
 public class PunishmentManager(ICoreServerAPI sapi)
 {
-    private ICoreServerAPI sapi = sapi;
+    private ICoreServerAPI? sapi = sapi;
 
     private static readonly DamageSource FireDamage = new() {
         Source = EnumDamageSource.Internal,
