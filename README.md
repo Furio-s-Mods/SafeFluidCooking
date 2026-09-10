@@ -22,7 +22,7 @@ If your pot contains solid food (like carrots, meat) or ores for smelting, you c
 
 ## Installation
 
-* Side: Universal (Required on Server, Optional but highly recommended on Client for the visual and sound effects).
+* Side: Universal (Required on both Server and Client for the visual and sound effects).
 
 ## Feedback
 Make noise on the discord channel under mods > Furio's Mods if you think this should be native behaviour.

@@ -3,10 +3,10 @@
   "modid": "securecookingpots",
   "name": "Secure Cooking Pots",
   "authors": [ "Furio" ],
-  "version": "1.0.3",
+  "version": "2.0.0",
   "description": "No more lost liquids. You'll get burnt if you try.",
   "side": "Universal",
-  "requiredOnClient": false,
+  "requiredOnClient": true,
   "dependencies": {
     "game": "1.22.0"
   }
